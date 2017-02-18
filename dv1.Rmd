@@ -1,0 +1,137 @@
+---
+title: <span style="color:blue">Data Visualization</span>
+author: <span style="color:steelblue">Nolan Cardozo</span>
+date: <span style="color:steelblue">1 February 2017</span>
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 100)
+```
+
+```{r, include=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+```{r}
+tweets <- read.csv("C:/Users/Admin/Desktop/data visulisation/narendramodi_tweets.csv")
+```
+
+###1. For the twitter data classify the columns i.e identify dimensions, numerical, date, geo and text columns
+
+The `tweets` dataset contains all the tweets tweeted by the Prime Minister oF India and other relavent infromation pertaining to the tweets.
+
+
+ The classification of the columsn is as follows.
+ 
+* ID- numerical
+
+* retweets_count - numerical 
+
+* favorite_count - numerical 
+
+* created_at - date
+
+* text - text
+
+* lang - dimension
+
+* retweeted - dimention (boolean)
+
+* followers_count - numerical
+
+* friends_count - numerical
+
+* hagtag_count -numerical
+
+* description - dimension
+
+* location -geo 
+
+* background_image_url - dimention
+
+* source - dimention
+ 
+ 
+###2.On which day of the month does Modi makes most number of tweets. Create a bar chart for the same
+ 
+```{r}
+tweets$date <- as.Date(tweets$created_at,'%Y-%m-%d %H:%M:%S')
+tweets$year <- format(tweets$date,"%Y")
+tweets$month <- format(tweets$date,"%m")
+tweets$day <- format(tweets$date,"%d")
+t1<- tweets %>% group_by(day) %>% summarise(count=n())
+head(t1)
+ggplot(t1,aes(day,count)) +geom_bar(stat="identity",fill="steelblue") + ylab("tweets")
+```
+
+###3. What is the difference between data visualization and infographics
+A data visualization is a graphical representation of quantifiable data, usually by means of well-known chart, graph or map types.
+An infographic is a graphical representation that combines one or more data visualizations with other non-data elements - such as graphics or text - to point out relationships, show a process or tell a story that cannot be automatically discerned from the data alone. An infographic requires the application of a creative process with some understanding of the underlying data and its context.
+Also, information graphics are visual representations of information, data or knowledge often used to support information, strengthen it and present it within a sensitive context.
+Data visualizations are visual displays of measured quantities by means of the combined use of a coordination system, points, lines, shapes, digits, letters quantified by visual attributes.
+So, I think the difference is more about the objective. Information graphics are used to tell a story or answer a question. Data visualizations are used to let the user find his own story or answer.
+
+
+###4. For the twitter data, identify the number of hashtags used from Jan-2016 to Dec-2016 and plot bar chart for the same
+
+```{r}
+t2 <- tweets %>% group_by(year,month) %>% summarise(totalhashtag= sum(hashtags_count)) %>% filter(year==2016)
+ggplot(t2,aes(month,totalhashtag)) + geom_bar(stat="identity",fill="steelblue")
+```
+
+###5. Create a bar chart and identify the second Indian player who has scored more number of runs against Australia
+
+```{r}
+odi_players <- read.csv("C:/Users/Admin/Desktop/data visulisation/odi-batting-analysis.csv")
+india <- odi_players %>% filter(Country=="India" & Versus=="Australia") %>% group_by(Player) %>% summarise(totalruns = sum(Runs,na.rm=T)) %>% arrange(-totalruns)
+ggplot(head(india,10),aes(factor(Player,levels =unique(Player)),totalruns)) + geom_bar(stat="identity",fill="steelblue") +coord_flip() + xlab("Players")
+```
+
+Mohammad Azharuddin has scored 2nd highest runs for india vs australia
+
+###6. Calculate the total number of runs scored by "Sachin R Tendulkar" against each country
+
+```{r}
+sachin <- odi_players %>% filter(Player=="Sachin R Tendulkar") %>% group_by(Versus) %>% summarise(totalruns = sum(Runs,na.rm=T)) %>% arrange(-totalruns) 
+ggplot(sachin,aes(factor(Versus,levels=unique(Versus)),totalruns)) + geom_bar(stat="identity",fill="steelblue") +coord_flip() + xlab("Country")
+```
+
+###7. Create a scatterplot for Runs Vs Scorerate for the top 10 Indian players. Add the smooth line to your scatter plot 
+
+```{r, warning=FALSE}
+top10 <- odi_players %>% filter(Country=="India") %>% group_by(Player) %>% summarise(totalruns= sum(Runs,na.rm=T)) %>% arrange(-totalruns)
+top10 <- head(top10,10)
+t3 <- odi_players %>% filter(odi_players$Player == top10$Player)
+ggplot(t3,aes(Runs,ScoreRate)) + geom_point(col="steelblue") + geom_smooth() + facet_wrap(~Player)
+```
+
+###8. Identify top 5 players who played cricket for more number of years
+
+```{r}
+moreyears <- odi_players %>% group_by(Player,year) %>% summarise(count= unique(year))
+more_years <- moreyears %>% group_by(Player) %>% summarise(count= n()) %>% arrange(-count)
+head(more_years,5)
+ggplot(head(more_years,5),aes(factor(Player,levels =unique(Player)),count)) + geom_bar(stat="identity",fill="steelblue") + xlab("Players") +ylab("Number of years")
+```
+
+###9. For the twitter data calculate total number of retweets from Jan-2016 to Dec-2016
+
+```{r}
+t4 <- tweets %>% filter(year== 2016) %>% group_by(description,month) %>% summarise(retweets = sum(as.numeric(retweeted),na.rm=T))
+ggplot(t4,aes(month,retweets)) + geom_bar(stat="identity",fill="steelblue")
+```
+
+
+###10. Create a bar chart to show top 10 players who has missed more number of centuries
+
+```{r}
+t5 <- odi_players %>% filter(Runs %in% c(90:99)) %>% group_by(Player) %>% summarise(count = n()) %>% arrange(-count)
+ggplot(head(t5,10),aes(factor(Player,levels =unique(Player)),count)) + geom_bar(stat= "identity",fill="steelblue") + coord_flip() + xlab("Players") +ylab("Missed Centuries")
+```
+
+
+
