@@ -1,0 +1,164 @@
+---
+title: <span style="color:blue">Data Visualization</span>
+author: <span style="color:steelblue">Nolan Cardozo</span>
+date: <span style="color:steelblue">1 February 2017</span>
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 100)
+```
+
+```{r, include=FALSE}
+#Assignment
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(VIM)
+options("scipen"=100)
+```
+##<span style="color:steelblue">The ODI BATTING DATA</span>
+
+The `ODI Batting` dataset contains facts about different International cricketers who have batted in the One day International format of the game of cricket over the years since the inception of the sport Cricket.
+
+Some of the variables in the `ODI Batting` dataset are:
+***<span style="color:skyblue">(Also classifying them into(Dimensions, Metrics, Dates, Text and Geo))</span>***
+
+* **<span style="color:darkgreen">Country</span>** - The names of countries which have played or are still playing cricket over the years**<span style="color:skyblue">(Dimension)</span>** 
+
+* **<span style="color:darkgreen">Player</span>** - The name of various players who have batted in international  cricket since the inception of the sport**<span style="color:skyblue">(Dimension)</span>**
+
+* **<span style="color:darkgreen">Runs</span>** - The Runs scored by players on a particular match date**<span style="color:skyblue">(Metric)</span>**
+
+* **<span style="color:darkgreen">Score Rate</span>** - The rate at which the batsman has scored runs in a particular match. **<span style="color:skyblue">(Metric)</span>**
+
+* **<span style="color:darkgreen">MatchDate</span>** - The Date on which a particular cricket match was played **<span style="color:skyblue">(Date)</span>**
+
+* **<span style="color:darkgreen">Ground</span>** - The name of Ground at which the match was played **<span style="color:skyblue">(Dimension)</span>**
+
+* **<span style="color:darkgreen">Versus</span>** - The opponent country against whom the match was played. **<span style="color:skyblue">(Dimension)</span>**
+
+* **<span style="color:darkgreen">Month,Year,Day,Weekday</span>** - These all are derived attributes from the Match Date variable.**<span style="color:skyblue">(Date)</span>**
+
+
+##<span style="color:steelblue">Reading the dataset into R.</span>
+```{r,out.width=15}
+odi_players <- read.csv("C:/Users/Admin/Desktop/data visulisation/odi-batting-analysis.csv")
+```
+
+##<span style="color:steelblue">Inspecting the first and last 6 rows of the data for better undertanding of contents.</span>
+```{r,out.width=20}
+head(odi_players)
+tail(odi_players)
+```
+
+##<span style="color:steelblue">Inspecting the structure of the data.</span>
+
+```{r}
+str(odi_players)
+```
+
+##<span style="color:steelblue">The number of rows and columns in the dataset.</span>
+
+```{r}
+dim(odi_players)
+```
+
+##<span style="color:steelblue">Running basic summary statistics on the data.</span>
+
+```{r}
+summary(odi_players,maxsum = 15)
+```
+
+##<span style="color:steelblue">1. Create a bar chart which plots total runs by month, by day of week and by day of the month.</span>
+```{r, fig.width=10}
+runs_by_month <- odi_players %>% group_by(month) %>% summarise(total_runs = sum(Runs,na.rm=TRUE)) %>% arrange(-total_runs)
+ggplot(runs_by_month,aes(month,total_runs)) + geom_bar(stat="identity",fill = "steelblue") +xlim(c("JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER")) + xlab("Months") + ylab("Number of Runs") + ggtitle("Number of Runs by Month")
+```
+
+<span style="color:darkgreen">The above barplot shows that most runs have been scored in the month of January gradually decreasing till March and then steeply falling for the month of may,slighting increasing in june and falling again in july,then gradually increasing till the end of the year while spiking at october.</span>
+
+```{r, fig.width=10}
+runs_by_day <- odi_players %>% group_by(day) %>% summarise(total_runs = sum(Runs,na.rm=TRUE)) %>% arrange(-total_runs)
+ggplot(runs_by_day,aes(day,total_runs)) + geom_bar(stat="identity",fill = "steelblue") + scale_x_continuous(breaks= scales::pretty_breaks(n=15)) + xlab("Days") + ylab("Number of Runs") + ggtitle("Number of Runs by Days")
+```
+
+<span style="color:darkgreen">The above barplot shows that most runs have been scored on the 20th of any month and least runs being scored on 31st of months which is justified since only 7 months have 31st.Also the runs scored in the end of the months is comparatively low.Rest of the days look to have fairly uniform runs scored</span>
+
+```{r}
+runs_by_weekday <- odi_players %>% group_by(weekday) %>% summarise(total_runs = sum(Runs,na.rm=TRUE)) %>% arrange(-total_runs)
+ggplot(runs_by_weekday,aes(weekday,total_runs)) + geom_bar(stat="identity",fill="steelblue") + xlim(c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday")) + xlab("Days of the week") + ylab("Number of Runs") + ggtitle("Number of Runs by Days of the week")
+```
+
+<span style="color:darkgreen">The above barplot shows that most runs have been scored on Sundays followed by Saturdays which are weekends and more matches are thought to be scheduled on these days,while the least numbers of runs are scored on Mondays.</span>
+
+
+#<span style="color:steelblue">2. Create a new column by binning the Runs column using the following ranges and plot the frequency count of ranges.</span>
+*a. 0-25,
+*b. 26-50,
+*c. 51-75,
+*d. 76-100,
+*e. 100+
+```{r}
+odi_players$Run_bins<-cut(odi_players$Runs,c(-Inf,25,50,75,100,Inf),labels=c("0-25","26-50","51-75","75-100","100+"))
+head(odi_players[,c("Runs","Run_bins")],25)
+bin_table<- as.data.frame(table(odi_players$Run_bins))
+names(bin_table) <- c("RunBins","Frequency")
+ggplot(bin_table,aes(RunBins,Frequency)) + geom_bar(stat="identity",fill="steelblue") + xlab("Runs") + ylab("Frequency") + ggtitle("Frequency of Runs")
+```
+
+<span style="color:darkgreen">The above barplot shows that by far,most runs scored are between 0-25 and the frequency of runs keep decreasing in the higher run buckets with the 100+ bucket having minimum frequency of Runs scored.</span>
+
+#<span style="color:steelblue">3. Consider the top ten players by total runs and compute and visualize the number of centuries across years and number of ducks across years.</span>
+```{r, fig.height=15, fig.width=20}
+player_10 <- odi_players %>% group_by(Player) %>% summarise("Total" = sum(Runs,na.rm=T)) %>% arrange(-Total)
+player_10 <- head(player_10,10)
+player_100 <- odi_players %>% filter(odi_players$Player %in% player_10$Player & odi_players$Runs>=100) %>% group_by(Player,year) %>% summarise(count= n())
+ggplot(player_100,aes(year,count)) + geom_line(col = "steelblue") + ylab("Number of centuries") + xlab("Top 10 Players") + ggtitle("Number of Centuries for top 10 players")  + facet_wrap(~Player) + scale_y_continuous(breaks= scales::pretty_breaks(n=5)) + scale_x_continuous(breaks= scales::pretty_breaks(n=10))
+```
+
+<span style="color:darkgreen">The above line plot shows the number of centuries scored by top 10 players for different years of their careers.The highest number of centuries in a calendar year was scored in the year 1998 by Sachin Tendulkar(9 centuries).</span>
+
+```{r, fig.height=15, fig.width=20}
+player_0 <- odi_players %>% filter(odi_players$Player %in% player_10$Player & odi_players$Runs==0) %>% group_by(Player,year) %>% summarise(count = n()) 
+ggplot(player_0,aes(year,count)) + geom_line(col = "steelblue") + ylab("Number of duckss") + xlab("Top 10 Players") + ggtitle("Number of ducks for top 10 players") + facet_wrap(~Player) + scale_x_continuous(breaks= scales::pretty_breaks(n=10))
+```
+
+<span style="color:darkgreen">The above line plot shows the number of ducks scored by top 10 players for different years of their careers.The highest number of ducks in a calendar year was scored in the year 2000 by Mohamad Yousuf(5 ducks) while Ricky Ponting has never scored more than 2 ducks in a calendar year in his career.</span>
+
+#<span style="color:steelblue">4. Compute poor players by using following criteria.</span>
+
+##<span style="color:steelblue">a. Calculate total number of runs by each player and then filter only for those players who have scored more than 5000 runs.</span>
+
+```{r}
+player_poor1 <- odi_players %>% group_by(Player) %>% summarise("total_runs" = sum(Runs,na.rm=T)) %>% arrange(total_runs) %>% filter(total_runs>5000)
+ player_poor1<-head(player_poor1,10)
+ player_poor1
+```
+
+##<span style="color:steelblue">b. Calculate total number of runs by each player and then filter only for those players who have played more than 50 matches.</span>
+
+```{r}
+player_poor2 <- odi_players %>% group_by(Player) %>% summarise("total_runs" = sum(Runs,na.rm=T),matches= n()) %>% arrange(total_runs) %>% filter(matches>50)
+player_poor2<- head(player_poor2,10)
+player_poor2
+```
+
+#<span style="color:steelblue">5. Create a new column by computing the number of words in each player's name.</span>
+```{r}
+odi_players$name_count <- sapply(str_split(odi_players$Player," "),length)
+head(unique(odi_players[,c("Player","name_count")]),50)
+```
+
+#<span style="color:steelblue">6. Cross-tabulation between month and day. Every row should have month and every column should have day of month. Value inside each cell should be the frequency count.</span>
+```{r}
+xtabs(~odi_players$month+odi_players$day)
+crosstab<-as.data.frame(xtabs(~odi_players$month+odi_players$day))
+names(crosstab)<- c("Months","Days","Freq")
+ggplot(crosstab, aes(Months, Days)) + geom_tile(aes(fill = Freq), colour = "black") + scale_fill_gradient(low = "white",high = "steelblue") 
+```
+
+<span style="color:darkgreen">The above heatmap shows the above cross tabulation frequencies of month and days,most matches seem to have been played in the month of January followed by February and March.Also it clearly shows that there have hardly been many matches from May to September while in the month of December there seem to have been alot of matches only on 15th.</span>
