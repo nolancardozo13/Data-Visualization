@@ -1,0 +1,121 @@
+---
+title: "BANK CAMPAIGN ANALYSIS"
+author: "Nolan Cardozo"
+date: "25 January 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data
+
+The `Bank Campaign` data set contains a campaign run by the bank and the response from the campaign. It contains a collection of variable given as follows.
+
+Some of the variables in the `Bank Campaign` data set are:
+***(Also classifying them into(Dimensions, Metrics, Dates, Text and Geo))***
+
+* **Age Group** - The Age Group of the respondents of the campaign.**(Dimension)** 
+
+* **Job** - The Job Title of the respondents of the campaign.**(Dimension)**
+
+* **Marital** - The Marital Status of the respondents of the campaign.**(Dimension)**
+
+* **Education** - The Highest Educational Qualification of the respondents of the campaign. **(Dimension)**
+* **Balance Group** - The income group to which the respondents of the campaign belongs to. **(Dimension)**
+* **Month** - The Month in which the campaign was run. **(Date)**
+
+* **Response Rate** - It captures data whether the respondent responded to the campaign or not. **(Can be both Dimension and metric but makes more sense as dimension)**
+
+
+##Reading the dataset into R
+```{r,out.width=15}
+Bank.Campaign <- read.csv("C:/Users/Admin/Desktop/data visulisation/Bank Campaign.csv")
+```
+
+##Inspecting the first and last 6 rows of the data for better undertanding of contents
+```{r,out.width=20}
+head(Bank.Campaign)
+tail(Bank.Campaign)
+```
+
+##Inspecting the structure and frequency of the data
+
+```{r}
+str(Bank.Campaign)
+```
+
+##The number of rows and columns in the dataset
+
+```{r}
+dim(Bank.Campaign)
+```
+
+##Running basic summary statistics on the data 
+
+```{r}
+summary(Bank.Campaign,maxsum=15)
+```
+##Checking for NA's in the dataset visually using package VIM and function aggr
+```{r, include=FALSE}
+library(VIM)
+```
+```{r, echo=TRUE, fig.width=15}
+missing_plot<-aggr(Bank.Campaign,col=c('blue','red'),
+                      numbers=TRUE,sortVars=TRUE,
+                      labels=names(Bank.Campaign),gap=1,
+                      ylab=c("Missing Data","Pattern"), plot=TRUE)
+```
+#####The above head map and histogram shows no null values in the dataset
+
+###The count of all non null values in each column
+```{r}
+as.data.frame(sapply(Bank.Campaign,function(y) sum(length(which(!is.na(y))))))
+```
+#####The above figure shows no null values in the dataset 
+
+##The frequency plots for all the dimensions are as follows:
+
+```{r, echo=FALSE}
+library(ggplot2)
+ggplot(data= Bank.Campaign, aes(Age.Group )) + geom_bar(fill= "steelblue") + labs(x="Age group",y= "Number of campaigns") + ggtitle("Number of campaigns per Age group")
+```
+
+
+```{r, echo=FALSE, fig.height=6, fig.width=10}
+ggplot(data= Bank.Campaign, aes(Job)) + geom_bar(fill= "steelblue") + labs(x="Job",y= "Number of campaigns") + ggtitle("Number of campaigns per Job Type")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Marital)) + geom_bar(fill= "steelblue") + labs(x="Marital Status",y= "Number of campaigns") + ggtitle("Number of campaigns per Marital Status")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Education)) + geom_bar(fill= "steelblue") + labs(x="Education",y= "Number of campaigns") + ggtitle("Number of campaigns per Educational backround")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Default)) + geom_bar(fill= "steelblue") + labs(x="Default",y= "Number of campaigns") + ggtitle("Number of campaigns per Default rate")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Balance.Group)) + geom_bar(fill= "steelblue") + labs(x="Balance Group",y= "Number of campaigns") + ggtitle("Number of campaigns per Balance Group")
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Month)) + geom_bar(fill= "steelblue") + labs(x="Month",y= "Number of campaigns") + ggtitle("Number of campaigns per Month")
+Bank.Campaign$Response.Rate <-
+factor(Bank.Campaign$Response.Rate)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data= Bank.Campaign, aes(Response.Rate)) + geom_bar(fill= "steelblue") + labs(x="Response Rate",y= "Number of campaigns") + ggtitle("Number of campaigns per Response Rate")
+```
+
