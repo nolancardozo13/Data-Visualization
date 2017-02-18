@@ -1,0 +1,185 @@
+---
+title: "Narendra Modi Twitter Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+---
+
+```{r setup, include=FALSE}
+#install.packages("tm")
+library(tm)
+#install.packages("wordcloud")
+library(wordcloud)
+#install.packages("Stringr")
+library(stringr)
+#install.packages("flexdashboard")
+library(flexdashboard)
+#install.packages("SnowballC")
+library(SnowballC)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("reshape2")
+library(reshape2)
+#install.packages("plotly")
+library(plotly)
+tweets <- read.csv("C:/Users/Admin/Desktop/data visulisation/narendramodi_tweets.csv")
+```
+
+Row {data-width=650}
+-----------------------------------------------------------------------
+
+### Total Number of Tweets
+
+```{r}
+number_of_tweets <- nrow(tweets)
+valueBox(number_of_tweets,icon ="fa-twitter",color = "skyblue")
+```
+
+### Average Number of ReTweets
+
+```{r}
+average_retweets <- format(round(sum(tweets$retweets_count)/nrow(tweets),2),2)
+valueBox(average_retweets,icon ="fa-retweet",color = "orange")
+```
+
+### Average Number of Favorites
+
+```{r}
+average_favorites <- format(round(sum(tweets$favorite_count)/nrow(tweets),2),2)
+valueBox(average_favorites,icon ="fa-heart",col="lightgreen")
+```
+
+Row {data-width=350}
+-----------------------------------------------------------------------
+
+### <span style="color:steelblue">**Top 5 hashtags used by Narendra Modi for the period Jan-2016 to Dec-2016.** <\span>
+
+```{r}
+tweets$date <- as.Date(tweets$created_at,'%Y-%m-%d %H:%M:%S')
+tweets$year <- format(tweets$date,"%Y")
+tweets$month <- format(tweets$date,"%m")
+tweets$day <- format(tweets$date,"%d")
+tweets$year_month <- format(tweets$date,"%Y-%m")
+tweets16 <- tweets %>% filter(year==2016)
+tweets16$text = as.character(tweets16$text)
+word_list = strsplit(tweets16$text," ")
+words<- unlist(word_list)
+words_count <- table(words)
+words_count <- sort(words_count,decreasing = T)
+words_count <- as.data.frame(words_count)
+stop_words <- stopwords()
+custom_stop_words <- c("&amp;","rt","рд.ре???")
+words_count$words <- tolower(words_count$words)
+words_count <- words_count[!words_count$words %in% stop_words,]
+words_count <- words_count[!words_count$words %in% custom_stop_words,]
+tweets$quarter <- quarters(tweets$date)
+top_words <- c("india","people","pm","president","good","wishes")
+tweets$text <- tolower(tweets$text)
+for(word in top_words){
+  tweets[word]<- str_count(tweets$text,word)
+}
+top_hashtags <-filter(words_count,grepl("#",words_count$words))
+top50_hashtags <- head(top_hashtags,50)
+top50_hashtags[top50_hashtags$words=="#sandesh2soldiers.",1] <- "#sandesh2soldiers"
+top50_hashtags[top50_hashtags$words=="#mannkibaat.",1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words==c("#mannkibaat.","#mannkibaat,"),1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words==c("#mannkibaat.","#mannkibaat,"),1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words=="#transformingindia.",1] <- "#transformingindia"
+top50_hashtags[top50_hashtags$words==c("#tirangayatra.","#tirangayatra"),1] <- "#tirangayatra"
+top50_hashtags[top50_hashtags$words=="#rio2016.",1] <- "#rio2016"
+top50_hashtags[top50_hashtags$words=="#idy2016.",1] <- "#idy2016"
+top50_hashtags<- top50_hashtags[-c(36,37),]
+top50_hashtags <- top50_hashtags %>% group_by(words) %>% summarise(Count = sum(Freq,na.rm=T)) %>% arrange(-Count)
+top50_hashtags <- top50_hashtags$words
+top5_hashtags <- head(top50_hashtags,5)
+for(hashtag in top5_hashtags){
+  tweets[hashtag]<- str_count(tweets$text,hashtag)
+}
+hashtags <- tweets %>% filter(year== 2016) %>% group_by(month) %>% summarise("#sandesh2soldiers" = sum(`#sandesh2soldiers`,na.rm=T) ,"#mannkibaat"=sum(`#mannkibaat`,na.rm=T),"#tirangayatra"= sum(`#tirangayatra`,na.rm=T),"#transformingindia" = sum(`#transformingindia`,na.rm=T),"#yogaday" = sum(`#yogaday`,na.rm=T))  
+tweets3 <- melt(hashtags,id.vars = "month")
+names(tweets3)<- c("Months","Hashtags","Count")
+a<-ggplot(tweets3,aes(Months,Count,group=Hashtags,col=Hashtags)) + geom_line()
+ggplotly(a)
+```
+
+
+
+Row {data-width=350}
+-----------------------------------------------------------------------
+
+### <span style="color:steelblue">**Top 6 words used by Narendra Modi in tweets from Q1-2016 to Q4-2016.**<\span>
+
+```{r}
+
+tweets1 <- tweets %>% filter(year== 2016) %>% group_by(quarter) %>% summarise(India= sum(india,na.rm=T),People= sum(people,na.rm=T),PM=sum(pm,na.rm=T),President = sum(president,na.rm=T),Good=sum(good,na.rm=T),Wishes=sum(wishes,na.rm=T)) 
+tweets2 <- melt(tweets1,id.vars= "quarter")
+names(tweets2)<- c("Quarter","Top_Words","Count")
+b<-ggplot(tweets2,aes(Quarter,Count)) + geom_bar(fill="steelblue",stat ="identity") +facet_wrap(~Top_Words)
+ggplotly(b)
+```
+
+
+
+### <span style="color:steelblue">**WordCloud showing Top 50 hashtags used by Narendra Modi**<\span>
+
+```{r}
+top_hashtags <-filter(words_count,grepl("#",words_count$words))
+top50_hashtags <- head(top_hashtags,50)
+top50_hashtags[top50_hashtags$words=="#sandesh2soldiers.",1] <- "#sandesh2soldiers"
+top50_hashtags[top50_hashtags$words=="#mannkibaat.",1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words==c("#mannkibaat.","#mannkibaat,"),1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words==c("#mannkibaat.","#mannkibaat,"),1] <- "#mannkibaat"
+top50_hashtags[top50_hashtags$words=="#transformingindia.",1] <- "#transformingindia"
+top50_hashtags[top50_hashtags$words==c("#tirangayatra.","#tirangayatra"),1] <- "#tirangayatra"
+top50_hashtags[top50_hashtags$words=="#rio2016.",1] <- "#rio2016"
+top50_hashtags[top50_hashtags$words=="#idy2016.",1] <- "#idy2016"
+top50_hashtags<- top50_hashtags[-c(36,37),]
+top50_hashtags <- top50_hashtags %>% group_by(words) %>% summarise(Count = sum(Freq,na.rm=T)) %>% arrange(-Count)
+wordcloud(top50_hashtags$words,top50_hashtags$Count,scale= c(3,1),colors= brewer.pal(6,'Dark2'))
+
+```
+
+
+
+Row {data-width=350}
+-----------------------------------------------------------------------
+
+### <span style="color:steelblue">**Days on which Narendra modi tweeted the most.**<\span>
+
+```{r}
+
+crosstab<-xtabs(~ month + day,data=tweets16)
+crosstab<-as.data.frame(crosstab)
+names(crosstab)<- c("Months","Days","Tweets_Count")
+crosstab[crosstab$Months== "01",] <- NULL
+c<-ggplot(crosstab, aes(Months, Days)) + geom_tile(aes(fill = Tweets_Count), colour = "white",size = 1) + scale_fill_gradient(low = "white",high = "steelblue") 
+ggplotly(c)
+```
+
+### <span style="color:steelblue">**Days on which Retweets are the most.**<\span>
+```{r}
+crosstab1 <- tweets16 %>% group_by(month,day) %>% summarise(Retweets = sum(retweets_count,na.rm=T))
+crosstab1 <- as.data.frame(crosstab1)
+names(crosstab1)<- c("Months","Days","Retweets_Count")
+d<-ggplot(crosstab1, aes(Months, Days)) + geom_tile(aes(fill = Retweets_Count), colour = "white",size = 1) + scale_fill_gradient(low = "white",high = "steelblue",na.value="white")+ theme_classic()
+ggplotly(d)
+
+```
+
+Row {data-width=350}
+-----------------------------------------------------------------------
+### <span style="color:blue">**Analysing the above Heatmaps,the following trends were found in the data: **<span/>
+
+* <span style="color:steelblue">**Narendra Modi made maximum amount of tweets on 21st June 2016 which is the International Yoga Day.**<\span>
+
+* <span style="color:steelblue">**It is also noticed that Narendra Modi tweeted alot on 17th September 2016,which happens to be his birthday.He visited his Mother in his hometown and attended alot of functions in Gujrat about which he semms to have tweeted**<\span>
+
+* <span style="color:steelblue">**Modi seems to have tweeted alot on 4th July 2016 too,investigating the tweets shows that Modi met the Rio Olympics 2016 Indian Contingent on that day and tweeted alot about the same.**<\span>
+
+* <span style="color:steelblue">**Alot of Modis tweets were retweeted between 8th November 2016 and 9th November 2016,which are pricisely the days Modi announced demonitization of Rs. 500 and Rs.1000 notes.**<\span>
+
+
+
